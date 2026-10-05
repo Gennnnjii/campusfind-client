@@ -1,75 +1,81 @@
-# React + TypeScript + Vite
+# CampusFind Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CampusFind is a campus lost-and-found and claim management application. This repository contains the React, TypeScript, Tailwind CSS, React Router, React Hook Form, Zod, and Axios frontend. The implemented Member 3 module covers claim submission, SDAO management, private claim review, and activity history.
 
-Currently, two official plugins are available:
+## Member 3 contribution
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Privacy-conscious claim form for eligible Found items
+- SDAO queues for Awaiting Turnover, Available for Claim, Pending Claims, Approved Claims, and Returned Items
+- Approve/reject review form with validation and confirmation
+- Turnover and return confirmation workflows
+- Filterable activity history
+- One configured Axios client and a reusable data-loading hook
+- Loading, error, empty, validation, success, and not-found states
+- Responsive design verified at 375px and desktop widths
 
-## React Compiler
+## Screenshots
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### SDAO desktop workflow
 
-## Expanding the ESLint configuration
+![SDAO management desktop](docs/screenshots/sdao-desktop.png)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Claim form at 375px
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+![Submit claim mobile](docs/screenshots/claim-mobile.png)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Routes
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Route | Page | Purpose |
+|---|---|---|
+| `/` | Member 3 module home | Explains the claim, SDAO, and traceability module |
+| `/items/:id/claim` | Submit Claim | Loads eligibility and submits private ownership evidence |
+| `/sdao` | SDAO Management | Shows grouped workflow queues and operational actions |
+| `/sdao/claims/:id` | Claim Review | Displays private claim evidence and records a decision |
+| `/activity` | Activity History | Shows and filters important workflow events |
+| `*` | Not Found | Provides a usable 404 state |
 
+## Setup
+
+Requirements: Node.js 20 or newer and the CampusFind API running locally.
+
+```bash
+npm install
+copy .env.example .env
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Configure `.env` when the API is not at the default address:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```env
+VITE_API_BASE_URL=http://localhost:8000/api
 ```
+
+Production verification:
+
+```bash
+npm run lint
+npm run build
+```
+
+## Frontend data flow
+
+1. A routed page calls the shared Axios instance in `src/api/client.ts`.
+2. Read screens use `useApiResource` for loading, cancellation, error handling, and reloads.
+3. Forms validate with schemas defined outside the component using Zod and `z.infer` types.
+4. The Express API enforces workflow rules and returns a consistent `{ data, message }` or `{ message, details? }` shape.
+5. A successful mutation reloads the affected server-backed view instead of duplicating server data in React state.
+
+## Privacy decisions
+
+Public claim pages show item-identification information only. They do not expose finder contact details, claimant emails, private proof, or internal review notes. Claimant evidence is displayed only in the SDAO review interface. Authentication is outside the required MVP, so this is a workflow boundary rather than production-grade access control.
+
+## Known limitations
+
+- Production authentication and role-based authorization are out of MVP scope.
+- Images and file uploads are not included.
+- Notifications, direct student-to-student contact, and deployment are not included.
+- This repository implements Member 3 routes; the remaining landing, discovery, item CRUD, matching, and analytics pages belong to the other team modules.
+
+## QA and defense
+
+See [Member 3 QA and Defense Guide](docs/MEMBER_3_QA_AND_DEFENSE.md) for the verified test matrix, demo steps, data flow, failure cases, and likely defense questions.
