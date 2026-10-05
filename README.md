@@ -79,3 +79,5 @@ Public claim pages show item-identification information only. They do not expose
 ## QA and defense
 
 See [Member 3 QA and Defense Guide](docs/MEMBER_3_QA_AND_DEFENSE.md) for the verified test matrix, demo steps, data flow, failure cases, and likely defense questions.
+
+For the complete project purpose, architecture, data model, workflows, business-rule rationale, API contracts, setup, QA evidence, integration contracts, and defense explanation, see [CampusFind Complete Project Documentation](docs/CAMPUSFIND_COMPLETE_DOCUMENTATION.md).
