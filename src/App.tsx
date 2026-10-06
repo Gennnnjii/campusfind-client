@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, Navigate } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { ActivityHistoryPage } from './pages/ActivityHistoryPage'
 import { ClaimReviewPage } from './pages/ClaimReviewPage'
@@ -11,7 +11,8 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<Member3HomePage />} />
+        <Route index element={<Navigate to="/member3" replace />} />
+        <Route path="member3" element={<Member3HomePage />} />
         <Route path="items/:id/claim" element={<SubmitClaimPage />} />
         <Route path="sdao" element={<SdaoManagementPage />} />
         <Route path="sdao/claims/:id" element={<ClaimReviewPage />} />

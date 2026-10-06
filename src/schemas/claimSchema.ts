@@ -9,10 +9,10 @@ export const claimSchema = z.object({
 export type ClaimFormValues = z.infer<typeof claimSchema>
 
 export const reviewSchema = z.object({
-  status: z.enum(['Approved', 'Rejected']),
+  status: z.enum(['approved', 'rejected']),
   reviewNote: z.string().trim().max(500, 'Review note is too long.'),
 }).superRefine((values, context) => {
-  if (values.status === 'Rejected' && values.reviewNote.length < 5) {
+  if (values.status === 'rejected' && values.reviewNote.length < 5) {
     context.addIssue({
       code: 'custom',
       path: ['reviewNote'],
