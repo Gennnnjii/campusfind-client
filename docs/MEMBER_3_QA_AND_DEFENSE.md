@@ -1,126 +1,84 @@
-# Member 3 QA and Defense Guide
+# Member 3 QA Matrix and Defense Notes
 
-## Contribution summary
+Prepared October 6, 2026 from the checked-out `feat/claims-sdao` client and server repositories. This records source review and local checks; it does not claim a live database or full browser run.
 
-Member 3 implemented the full claim lifecycle, SDAO operational workflow, and activity-log trail across React, Axios, Express, Mongoose, and MongoDB. Shared work includes responsive QA, consistent feedback states, seed verification, API documentation, and defense preparation.
+## QA matrix
 
-## What Why How Data Flow
+| ID | Area / scenario | Expected HTTP result and message | Expected UI / privacy result | Evidence / status |
+|---|---|---|---|---|
+| C01 | Eligible Found item (`Available for Claim`) eligibility lookup | `GET /api/items/:id/claim-eligibility` returns 200, `eligible: true`, `reason: null` | Claim form displays item/category/location/date and `claimLocation`; no Claim data | `server/routes/itemClaims.js`; code reviewed, no DB-backed request run |
+| C02 | Lost or unavailable Found item eligibility lookup | 200 with `eligible: false` and reason `Only Found items with Available for Claim status can receive claims.` | Form is closed with the eligibility reason | `server/routes/itemClaims.js`; code reviewed |
+| C03 | Submit invalid or undersized claim fields | Client blocks; direct API request returns 400 validation details | Field-level validation; no claim/private payload in public item view | `client/src/schemas/claimSchema.ts`, `server/models/Claim.js`, `middleware/errorHandler.js`; schema unit coverage for invalid values |
+| C04 | Submit valid eligible claim | 201, `Claim submitted successfully. Keep your reference code for follow-up.` | Success state shows reference and Pending status; proof remains in the Claim record | `server/routes/claims.js`, `services/claimWorkflow.js`, `client/src/pages/SubmitClaimPage.tsx`; code reviewed, no DB-backed request run |
+| C05 | Repeat Pending claim for same normalized email and item | 400, `You already have a pending claim for this item` | Error feedback; no duplicate pending entry | `services/claimWorkflow.js`, partial unique index in `models/Claim.js`; code reviewed |
+| C06 | Submit for missing item or malformed ObjectId | 404 `Found item not found` for absent item; 400 `Invalid _id` for malformed id | Error state; no crash | `services/claimWorkflow.js`, `middleware/errorHandler.js`; generic error handling tested, endpoint cases not DB-backed |
+| C07 | SDAO overview with pending/approved/returned work | 200 grouped into five queues and counts | SDAO review view needs claimant identity/proof; keep it restricted to designated staff | `routes/sdao.js`; code reviewed, endpoint is currently unauthenticated (see blocker P01) |
+| C08 | Reject without a useful note | 400, `A short review note is required when rejecting a claim` | Client requires a note; form remains actionable | `services/claimWorkflow.js`, `client/src/schemas/claimSchema.ts`; code reviewed |
+| C09 | Approve a Pending claim | 200, `Claim approved successfully.` | Status updates; competing Pending claims become Rejected; review details stay in SDAO workflow | `routes/claims.js`, `services/claimWorkflow.js`; code reviewed, no DB transaction run |
+| C10 | Review an already finalized claim | 400, `Only Pending claims can be reviewed` | Error feedback; final status is unchanged | `services/claimWorkflow.js`; code reviewed |
+| C11 | Competing approval / uniqueness race | At most one Approved Claim per item; duplicate-key errors currently map to 400 `A record with that unique value already exists` | Refresh shows committed result | Partial unique index in `models/Claim.js`; concurrency not exercised |
+| C12 | Turnover an item not in Pending Turnover or not Found | 400, `Only Found items awaiting turnover can be confirmed` | SDAO action fails with readable feedback | `services/sdaoWorkflow.js`; code reviewed |
+| C13 | Return without an Approved Claim | 400, `An approved claim is required before this item can be returned` | Item remains available; SDAO gets error feedback | `services/sdaoWorkflow.js`; code reviewed |
+| C14 | Return with an Approved Claim | 200, `Item marked Returned successfully.` | Returned queue reflects the transition | `services/sdaoWorkflow.js`; code reviewed, no DB transaction run |
+| C15 | Activity history and filters | 200 newest first; invalid action/date filter returns 400 | Show event label/message and related public-safe item fields | `routes/activityLogs.js`; code reviewed, endpoint not run against data |
+| C16 | Invalid MongoDB id / absent Claim, Item, or route | 400 for CastError; 404 with `Claim not found`, `Item not found`, or `Route not found` as applicable | Error state; no stack trace | `middleware/errorHandler.js`, route handlers, `app.js`; malformed JSON and unknown-route tests passed |
+| C17 | Public Claim privacy boundary | Public retrieval must not return claimant email, proof, review notes, student number, or full Claim objects | Public Item retrieval contains only reviewed public fields; SDAO details require access control | **Fail / coordination required:** `GET /api/items/:id/claims` returns full Claim documents; `GET /api/claims`, `GET /api/claims/:id`, and `/api/sdao/overview` also return private fields without auth middleware. See P01. |
+| C18 | Item API handoff | `GET /api/items` and `GET /api/items/:id` return the Member 1 public Item contract | Public fields only; preserve `claimLocation`; category/location population must not change eligibility | **Not present in checked server snapshot:** `app.js` mounts only `itemClaimsRouter` at `/api/items`, which defines only `/:id/claim-eligibility` and `/:id/claims`. See P02. |
+| C19 | Responsive/browser end-to-end flow at 375px and desktop | Complete flow and persisted state | No horizontal overflow; verify loading, error, empty, validation, success | **Pending:** no browser or live Atlas workflow executed in this review. Screenshots in `docs/screenshots` are existing artifacts, not fresh evidence for this pass. |
+
+### Local checks executed
+
+| Check | Result |
+|---|---|
+| Server `npm test` | Pass, 8/8. Covers health, generic 404, malformed JSON, activity filter validation, claim reference/schema validation, Item type-specific status, and pure eligibility predicate. It does not exercise MongoDB workflow transactions or endpoint privacy. |
+| Server `npm run seed:check` | Pass: 7 categories, 6 locations, 26 items, 12 claims, 63 activities; in-memory blueprint validation only. |
+| Client `npm run build` | Pass: TypeScript project build and Vite production build. |
+| Client `npm run lint` | Pass with no reported lint errors. |
+| Atlas integration / browser / viewport QA | Not run; requires approved development data and interactive browser workflow. |
+
+## Contract review
+
+- **Eligibility:** the server and client use `type: 'Found'` plus `status: 'Available for Claim'`. The service rechecks this at submission and review time; this is a sound server-side guard. Schema tests cover allowed type-specific statuses and the pure eligibility predicate.
+- **Category/location:** the eligibility endpoint populates only each related resource's `name`. Neither is used in the eligibility predicate.
+- **Claim location:** the eligibility response selects `claimLocation`; Claim response population and SDAO item population preserve it. Client types and the submit page consume it.
+- **Public/private boundary:** eligibility itself does not join Claim records, but the public-by-default API has other routes that return full Claim records. No authentication or role middleware is mounted in `app.js`. Privacy is therefore **not verified and currently fails** at P01.
+- **Item handoff:** Item list and Item detail handlers described as merged in the workplan are absent from this checked server snapshot (P02). The Item-to-Claim contract cannot be fully validated end to end here.
+- **Route ownership:** `/api/items/:id/claim-eligibility` and `/api/items/:id/claims` are mounted through `routes/itemClaims.js`; general Item CRUD/retrieval is not implemented in the checked server source. Claim and SDAO routes are mounted separately by `app.js`.
+
+### Findings requiring coordination
+
+**P01 — Private Claim data is returned by unauthenticated routes (high priority).** `routes/itemClaims.js` queries and returns full Claim documents at `GET /api/items/:id/claims`. `routes/claims.js` also returns full Claim documents from list/detail routes, and `routes/sdao.js` returns full claims with proof and claimant data. `app.js` has no authentication/authorization middleware. The README explicitly identifies production SDAO role enforcement as out of MVP scope, but that means these routes cannot be described as a verified privacy boundary. The safe resolution needs an agreed policy for route access and response shapes; that changes shared API/access contracts, so coordinate with the project owner before changing it. Do not expose real claimant content in screenshots or reports.
+
+**P02 — Public Item list/detail API is missing from the checked server snapshot.** `app.js` mounts the Member 3 Item subrouter, whose only routes are the two claim subpaths. There is no handler for `GET /api/items` or `GET /api/items/:id`; unknown paths fall through to 404. This conflicts with the workplan's merged Member 1 server status. Confirm the intended integration branch/repository and ask the Item owner to restore or identify those handlers. Member 3 should not recreate or edit Member 1 routes.
+
+## Defense notes
 
 ### What
 
-The module accepts ownership claims for eligible Found items, lets SDAO review them, automatically closes competing claims after approval, prevents unapproved returns, and records every important state change.
+The module accepts claims for Found items that are in `Available for Claim`, gives each submission a server-generated reference, routes review through SDAO workflow pages, enforces one-way claim decisions, and records workflow activity.
 
 ### Why
 
-The rules protect privacy and prevent inconsistent data. Public users never need finder contact details, only SDAO can see private proof in the workflow UI, two claims cannot both be approved for one item, and an item cannot be marked Returned before ownership approval.
+The status gate avoids claims on lost, unreceived, or already returned items. Review notes and proof support a decision. Transactions keep related writes together, and database uniqueness constraints protect against races. A reference code lets staff find a claim without putting proof on a public Item page.
 
-### How
+### How and data flow
 
-- React Router exposes Submit Claim, SDAO Management, Claim Review, and Activity History pages.
-- A single Axios instance sends requests to the Express API.
-- React Hook Form and Zod validate both claim submission and claim review.
-- Express routers call focused workflow services.
-- Mongoose schemas enforce required fields, enums, lengths, email format, timestamps, references, and a partial unique index.
-- MongoDB transactions keep claim decisions, competing-claim closure, item changes, and logs atomic.
+`SubmitClaimPage -> shared Axios client -> Express route -> claimWorkflow/sdaoWorkflow -> Mongoose models -> MongoDB transaction -> JSON response -> UI feedback/reload`
 
-### Data flow
+Claim submission validates the payload, loads and checks the Item, checks for an existing Pending claim for that email and Item, generates a reference, saves the Claim, and writes `claim_submitted`. Review changes only Pending claims. Approval rejects competing Pending claims and writes corresponding logs in the same transaction. Turnover moves a Found item from Pending Turnover to Available for Claim. Return requires an Approved claim and moves the item to Returned. Activity History reads the event log newest first.
 
-`React page -> shared Axios client -> Express router -> workflow service -> Mongoose model -> MongoDB Atlas -> JSON response -> React feedback and reload`
+### Failure cases
 
-## Verified QA matrix
+Invalid payloads and state transitions return 400; malformed IDs return 400; absent records return 404; competing pending submissions are rejected; duplicate Approved claims are constrained by a partial unique index; a rejected claim requires a note; a return requires an Approved claim. Transactions require MongoDB Atlas or another replica set. Unexpected server errors return a generic 500 response.
 
-| Area | Check | Result |
-|---|---|---|
-| Client | TypeScript production build | Pass |
-| Client | ESLint | Pass |
-| Server | Automated tests | Pass |
-| Seed | In-memory document validation | Pass |
-| Seed | 7 categories and 6 locations | Pass |
-| Seed | 26 reports and 12 claims | Pass |
-| Seed | 63 activity records and valid references | Pass |
-| Workflow | Only Found + Available for Claim accepts claims | Pass |
-| Workflow | Duplicate Pending claim per email/item blocked | Pass |
-| Workflow | Approval rejects competing Pending claims | Pass |
-| Workflow | One Approved claim per item enforced by index | Pass |
-| Workflow | Returned requires Approved claim | Pass |
-| Workflow | Important changes write ActivityLog records | Pass |
-| UI | Loading, error, empty, validation, success, and 404 states | Pass |
-| UI | All Member 3 routes at 375px with no page overflow | Pass |
-| UI | Desktop SDAO layout | Pass |
-| Browser | Claim validation and successful submission | Pass |
-| Browser | Turnover confirmation and success feedback | Pass |
-| Browser | Rejection note validation and confirmation | Pass |
-| Browser | Activity filter | Pass |
-| Browser | Console errors during QA | None |
+### Questions to be ready for
 
-Database integration requires the team's `MONGO_URI`. After configuring it, run `npm run seed`, `npm run seed:verify`, and then execute the demo flow below against MongoDB Atlas.
+- **Why generate the reference on the server?** The server controls format and uniqueness; a browser cannot choose another user's reference.
+- **Why use both workflow checks and a partial unique index?** The service gives a useful decision path; the index is the database's concurrency backstop for one Approved Claim per Item.
+- **Why transactions?** Approval, competing-claim updates, Item transitions, and ActivityLog writes must commit or roll back together.
+- **Can we claim privacy is enforced today?** No. Private fields are returned by unauthenticated Claim/SDAO routes in this snapshot. State this limitation and coordinate an access/response contract fix before using real claimant data.
+- **What is needed for complete end-to-end QA?** The missing Item list/detail API integration, approved non-sensitive seed data on a transaction-capable test database, then browser tests for submission, competing claims, review, return, persistence, and mobile/desktop layout.
 
-## Member 3 demo flow
+## Scope and execution gate
 
-1. Run the server and client with the seeded Atlas database.
-2. Open `/sdao` and identify the five workflow sections.
-3. Confirm one Pending Turnover item and show it becoming Available for Claim.
-4. Open that item's claim form.
-5. Submit an empty or short form first to demonstrate field-level Zod validation.
-6. Submit a valid claim and save the generated reference code.
-7. Open the claim from Pending Claims and explain that proof is private to the SDAO view.
-8. Reject one claim without a note to demonstrate validation, then approve the intended claim.
-9. Show that competing Pending claims for the same item are automatically Rejected.
-10. Mark the approved item Returned and explain the approved-claim prerequisite.
-11. Open Activity History and filter for approvals or returns.
-12. Refresh to prove MongoDB persistence.
-13. Open an invalid claim ID or missing route to demonstrate clean error handling.
-
-## Failure cases to explain
-
-- Lost item or non-available Found item: claim rejected with HTTP 400.
-- Duplicate Pending claim from the same email for the same item: HTTP 400.
-- Invalid MongoDB ID: HTTP 400 through the shared error handler.
-- Missing claim or item: HTTP 404.
-- Re-review of Approved or Rejected claim: HTTP 400.
-- Rejection without a useful note: HTTP 400.
-- Return without an Approved claim: HTTP 400.
-- Two approvals for one item: blocked by both workflow logic and the database index.
-- Network/server failure: visible UI error with retry; no blank screen.
-- Malformed JSON: HTTP 400 with `{ "message": "Invalid JSON payload" }`.
-
-## Likely defense questions
-
-### Why is the claim reference generated on the server?
-
-The server is the trusted source of truth. Server generation gives one format, avoids client manipulation, and lets the database enforce uniqueness.
-
-### Why use a partial unique index?
-
-Application checks can race. The partial index is a final database guarantee that only one claim with `status: Approved` can exist for an item while still allowing many Pending and Rejected claims.
-
-### Why use a transaction?
-
-Approving a claim may update the chosen claim, reject competitors, and create several logs. Returning an item updates both the item workflow and its log. A transaction makes each multi-document operation all-or-nothing.
-
-### Why not expose claimant or finder details publicly?
-
-The blueprint requires a privacy-conscious SDAO-mediated recovery. Public pages show only item-identification fields; private proof is reserved for the operational review page.
-
-### Why reload after mutations instead of manually editing every list?
-
-The server owns the workflow and may change several records at once. Reloading the grouped overview prevents duplicated derived state and ensures the UI reflects the committed database result.
-
-### What is genuine data processing in this module?
-
-Eligibility is computed from item type and status; the SDAO overview groups live records into operational queues; approval evaluates and closes competing claims; return eligibility depends on an Approved claim; activity filters and the reference generator derive useful results beyond CRUD.
-
-### What happens if two staff members approve different claims at the same time?
-
-Both requests use transactions, and the partial unique index on Approved claims is the final concurrency guard. One approval can commit; the other receives a duplicate-key error translated to HTTP 400.
-
-## Final pre-demo checklist
-
-- Use a dedicated Atlas development database with transaction support.
-- Confirm `.env` contains `MONGO_URI` and is not committed.
-- Run `npm run seed` then `npm run seed:verify` in the server.
-- Run `npm test` in the server.
-- Run `npm run lint` and `npm run build` in the client.
-- Keep both terminals visible and start the app before presentation time.
-- Complete the demo once without resetting the database.
-- Know the exact files personally implemented and ensure commits are made from the correct Member 3 GitHub account.
+No code route, shared contract, dependency, environment file, seed, migration, index, or database was changed. P01 and P02 require cross-owner/shared-contract coordination under the authorized workplan. Execute the deferred browser/data workflow only when the Item API and approved shared seed are ready.
