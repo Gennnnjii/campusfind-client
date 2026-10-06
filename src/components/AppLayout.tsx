@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 const navItems = [
   { to: '/', label: 'Module Home', end: true },
+  { to: '/items', label: 'Browse Items', end: true },
   { to: '/sdao', label: 'SDAO Management' },
   { to: '/activity', label: 'Activity History' },
 ]
@@ -19,7 +20,7 @@ export function AppLayout() {
             </span>
           </NavLink>
 
-          <nav aria-label="Primary navigation" className="grid w-full grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 lg:w-auto">
+          <nav aria-label="Primary navigation" className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 lg:w-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
