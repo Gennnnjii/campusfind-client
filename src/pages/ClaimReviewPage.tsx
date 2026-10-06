@@ -19,7 +19,7 @@ export function ClaimReviewPage() {
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null)
   const { register, handleSubmit, control, formState: { errors } } = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
-    defaultValues: { status: 'Approved', reviewNote: '' },
+    defaultValues: { status: 'approved', reviewNote: '' },
   })
   const selectedStatus = useWatch({ control, name: 'status' })
 
@@ -43,7 +43,7 @@ export function ClaimReviewPage() {
   if (error) return <StatePanel title="Claim unavailable" message={error} tone="error" action={<button onClick={reload} className="rounded-lg bg-red-800 px-4 py-2 text-sm font-bold text-white">Try again</button>} />
   if (!claim) return <StatePanel title="Claim not found" message="No claim was selected for review." tone="error" />
 
-  const waitingDays = claim.status === 'Pending' ? daysSince(claim.createdAt) : null
+  const waitingDays = claim.status === 'pending' ? daysSince(claim.createdAt) : null
 
   return (
     <div className="space-y-6">
@@ -84,7 +84,7 @@ export function ClaimReviewPage() {
         </section>
       </div>
 
-      {claim.status === 'Pending' ? (
+      {claim.status === 'pending' ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-black text-campus-navy">Record decision</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">Approving this claim automatically rejects any other pending claims for the same item. A finalized claim cannot be changed through this workflow.</p>
@@ -92,31 +92,31 @@ export function ClaimReviewPage() {
             <fieldset>
               <legend className="text-sm font-bold text-slate-700">Decision</legend>
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                {(['Approved', 'Rejected'] as const).map((status) => (
+                {(['approved', 'rejected'] as const).map((status) => (
                   <label key={status} className={`flex items-center gap-3 rounded-xl border p-4 font-bold ${selectedStatus === status ? 'border-campus-teal bg-campus-mist text-campus-navy' : 'border-slate-200 text-slate-600'}`}>
-                    <input type="radio" value={status} {...register('status')} /> {status}
+                    <input type="radio" value={status} {...register('status')} /> {status === 'approved' ? 'Approved' : 'Rejected'}
                   </label>
                 ))}
               </div>
             </fieldset>
             <div>
-              <label htmlFor="reviewNote" className="text-sm font-bold text-slate-700">Review note {selectedStatus === 'Rejected' ? '(required)' : '(optional)'}</label>
+              <label htmlFor="reviewNote" className="text-sm font-bold text-slate-700">Review note {selectedStatus === 'rejected' ? '(required)' : '(optional)'}</label>
               <textarea id="reviewNote" rows={4} {...register('reviewNote')} className="mt-2 w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm shadow-sm focus:border-campus-teal" />
               {errors.reviewNote && <p className="mt-1.5 text-sm font-medium text-red-700">{errors.reviewNote.message}</p>}
             </div>
-            <button type="submit" className={`rounded-xl px-5 py-3 text-sm font-extrabold text-white ${selectedStatus === 'Rejected' ? 'bg-rose-700 hover:bg-rose-800' : 'bg-campus-teal hover:bg-teal-800'}`}>Continue to confirmation</button>
+            <button type="submit" className={`rounded-xl px-5 py-3 text-sm font-extrabold text-white ${selectedStatus === 'rejected' ? 'bg-rose-700 hover:bg-rose-800' : 'bg-campus-teal hover:bg-teal-800'}`}>Continue to confirmation</button>
           </form>
         </section>
       ) : (
-        <StatePanel title={`Claim ${claim.status.toLowerCase()}`} message={claim.reviewNote || `This claim was finalized on ${claim.reviewedAt ? formatDate(claim.reviewedAt) : 'an earlier date'}.`} tone={claim.status === 'Approved' ? 'success' : 'neutral'} />
+        <StatePanel title={`Claim ${claim.status}`} message={claim.reviewNote || `This claim was finalized on ${claim.reviewedAt ? formatDate(claim.reviewedAt) : 'an earlier date'}.`} tone={claim.status === 'approved' ? 'success' : 'neutral'} />
       )}
 
       <ConfirmDialog
         open={Boolean(pendingReview)}
-        title={pendingReview?.status === 'Approved' ? 'Approve this claim?' : 'Reject this claim?'}
-        message={pendingReview?.status === 'Approved' ? 'Approval is final and will automatically reject competing Pending claims for this item.' : 'Rejection is final in the current workflow. The review note will be stored with the claim.'}
-        confirmLabel={pendingReview?.status === 'Approved' ? 'Confirm approval' : 'Confirm rejection'}
-        tone={pendingReview?.status === 'Rejected' ? 'danger' : 'primary'}
+        title={pendingReview?.status === 'approved' ? 'Approve this claim?' : 'Reject this claim?'}
+        message={pendingReview?.status === 'approved' ? 'Approval is final and will automatically reject competing Pending claims for this item.' : 'Rejection is final in the current workflow. The review note will be stored with the claim.'}
+        confirmLabel={pendingReview?.status === 'approved' ? 'Confirm approval' : 'Confirm rejection'}
+        tone={pendingReview?.status === 'rejected' ? 'danger' : 'primary'}
         isBusy={isSaving}
         onConfirm={confirmReview}
         onCancel={() => !isSaving && setPendingReview(null)}

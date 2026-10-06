@@ -145,7 +145,7 @@ export function SdaoManagementPage() {
                     <div className="flex flex-wrap items-center gap-2"><h3 className="font-extrabold text-campus-navy">{claim.item.title}</h3><StatusBadge status={claim.status} /></div>
                     <p className="mt-1 break-all text-sm text-slate-500">{claim.referenceCode}</p>
                   </div>
-                  {claim.item.status === 'Available for Claim' ? (
+                  {claim.item.status === 'available_for_claim' ? (
                     <button onClick={() => setPendingAction({ kind: 'return', item: claim.item })} className="shrink-0 rounded-lg bg-campus-gold px-3.5 py-2 text-sm font-bold text-campus-navy hover:bg-amber-300">Mark returned</button>
                   ) : <StatusBadge status={claim.item.status} />}
                 </div>

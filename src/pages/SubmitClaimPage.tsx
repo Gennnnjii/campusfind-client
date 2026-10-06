@@ -59,7 +59,7 @@ export function SubmitClaimPage() {
           <p className="mt-3 whitespace-nowrap font-mono text-xl font-black tracking-normal sm:text-4xl sm:tracking-wide">{submittedClaim.referenceCode}</p>
           <p className="mt-5 text-sm leading-6 text-slate-200">Status: Pending. Bring proof of ownership to {submittedClaim.item.claimLocation || 'SDAO'} for physical verification.</p>
         </section>
-        <Link to="/" className="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-campus-navy shadow-sm hover:bg-slate-50">Return to module home</Link>
+        <Link to="/member3" className="inline-flex rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-campus-navy shadow-sm hover:bg-slate-50">Return to module home</Link>
       </div>
     )
   }

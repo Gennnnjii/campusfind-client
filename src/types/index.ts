@@ -1,11 +1,11 @@
 export type ItemStatus =
-  | 'Open'
-  | 'Recovered'
-  | 'Pending Turnover'
-  | 'Available for Claim'
-  | 'Returned'
+  | 'open'
+  | 'recovered'
+  | 'pending_turnover'
+  | 'available_for_claim'
+  | 'returned'
 
-export type ClaimStatus = 'Pending' | 'Approved' | 'Rejected'
+export type ClaimStatus = 'pending' | 'approved' | 'rejected'
 
 export type NamedResource = {
   _id: string
@@ -16,7 +16,7 @@ export type Item = {
   _id: string
   title: string
   description?: string
-  type: 'Lost' | 'Found'
+  type: 'lost' | 'found'
   status: ItemStatus
   claimLocation: string
   dateOccurred: string
