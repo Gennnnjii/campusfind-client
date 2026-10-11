@@ -10,6 +10,8 @@ export type ClaimStatus = 'pending' | 'approved' | 'rejected'
 export type NamedResource = {
   _id: string
   name: string
+  description?: string
+  isActive?: boolean
 }
 
 export type Item = {

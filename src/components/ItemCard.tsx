@@ -1,8 +1,9 @@
 import type { Item } from '../types'
+import { Link } from 'react-router-dom'
 import { StatusBadge } from './StatusBadge'
 import { formatDate } from '../utils/format'
 
-export function ItemCard({ item }: { item: Item }) {
+export function ItemCard({ item, onRecover }: { item: Item; onRecover?: (item: Item) => void }) {
   const typeLabel = item.type === 'lost' ? 'Lost' : item.type === 'found' ? 'Found' : item.type
   const categoryName = item.category?.name || 'Uncategorized'
   const locationName = item.location?.name || 'Location unavailable'
@@ -55,6 +56,19 @@ export function ItemCard({ item }: { item: Item }) {
           </div>
         )}
       </dl>
+
+      <div className="mt-auto border-t border-slate-100 pt-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to={`/items/${item._id}/edit`} className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-bold text-campus-teal transition hover:bg-campus-mist hover:text-campus-navy">
+            Edit report
+          </Link>
+          {item.type === 'lost' && item.status === 'open' && onRecover && (
+            <button type="button" onClick={() => onRecover(item)} className="inline-flex min-h-10 items-center rounded-lg border border-emerald-200 px-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50">
+              Mark recovered
+            </button>
+          )}
+        </div>
+      </div>
     </article>
   )
 }
