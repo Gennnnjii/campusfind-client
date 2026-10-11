@@ -5,6 +5,7 @@ import { BrowseItemsPage } from './pages/BrowseItemsPage'
 import { ClaimReviewPage } from './pages/ClaimReviewPage'
 import { EditItemPage } from './pages/EditItemPage'
 import { FoundReportsPage } from './pages/FoundReportsPage'
+import { ItemDetailsPage } from './pages/ItemDetailsPage'
 import { LostReportsPage } from './pages/LostReportsPage'
 import { Member3HomePage } from './pages/Member3HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -26,6 +27,7 @@ function App() {
         <Route path="report" element={<ReportItemPage />} />
         <Route path="references" element={<ReferenceManagementPage />} />
         <Route path="items/:id/claim" element={<SubmitClaimPage />} />
+        <Route path="items/:id" element={<ItemDetailsPage />} />
         <Route path="sdao" element={<SdaoManagementPage />} />
         <Route path="sdao/claims/:id" element={<ClaimReviewPage />} />
         <Route path="activity" element={<ActivityHistoryPage />} />
