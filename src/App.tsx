@@ -4,6 +4,8 @@ import { ActivityHistoryPage } from './pages/ActivityHistoryPage'
 import { BrowseItemsPage } from './pages/BrowseItemsPage'
 import { ClaimReviewPage } from './pages/ClaimReviewPage'
 import { EditItemPage } from './pages/EditItemPage'
+import { FoundReportsPage } from './pages/FoundReportsPage'
+import { LostReportsPage } from './pages/LostReportsPage'
 import { Member3HomePage } from './pages/Member3HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ReportItemPage } from './pages/ReportItemPage'
@@ -18,6 +20,8 @@ function App() {
         <Route index element={<Navigate to="/member3" replace />} />
         <Route path="member3" element={<Member3HomePage />} />
         <Route path="items" element={<BrowseItemsPage />} />
+        <Route path="items/lost" element={<LostReportsPage />} />
+        <Route path="items/found" element={<FoundReportsPage />} />
         <Route path="items/:id/edit" element={<EditItemPage />} />
         <Route path="report" element={<ReportItemPage />} />
         <Route path="references" element={<ReferenceManagementPage />} />
