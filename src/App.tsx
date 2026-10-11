@@ -3,6 +3,7 @@ import { AppLayout } from './components/AppLayout'
 import { ActivityHistoryPage } from './pages/ActivityHistoryPage'
 import { BrowseItemsPage } from './pages/BrowseItemsPage'
 import { ClaimReviewPage } from './pages/ClaimReviewPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { EditItemPage } from './pages/EditItemPage'
 import { FoundReportsPage } from './pages/FoundReportsPage'
 import { ItemDetailsPage } from './pages/ItemDetailsPage'
@@ -20,6 +21,7 @@ function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/member3" replace />} />
         <Route path="member3" element={<Member3HomePage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="items" element={<BrowseItemsPage />} />
         <Route path="items/lost" element={<LostReportsPage />} />
         <Route path="items/found" element={<FoundReportsPage />} />
