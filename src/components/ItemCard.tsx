@@ -59,6 +59,9 @@ export function ItemCard({ item, onRecover }: { item: Item; onRecover?: (item: I
 
       <div className="mt-auto border-t border-slate-100 pt-4">
         <div className="flex flex-wrap items-center gap-2">
+          <Link to={`/items/${item._id}`} className="inline-flex min-h-10 items-center rounded-lg bg-campus-navy px-3 text-sm font-bold text-white transition hover:bg-slate-700">
+            View details
+          </Link>
           <Link to={`/items/${item._id}/edit`} className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-bold text-campus-teal transition hover:bg-campus-mist hover:text-campus-navy">
             Edit report
           </Link>
