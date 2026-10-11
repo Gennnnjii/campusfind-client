@@ -74,3 +74,25 @@ export type SdaoOverview = {
   approvedClaims: Claim[]
   returnedItems: Item[]
 }
+
+export type MatchScoreBreakdown = {
+  category: 0 | 40
+  location: 0 | 25
+  date: 0 | 20
+  title: 0 | 15
+}
+
+export type PossibleMatch = {
+  _id: string
+  title: string
+  description: string
+  type: 'lost' | 'found'
+  status: ItemStatus
+  category: NamedResource | null
+  location: NamedResource | null
+  dateOccurred: string
+  claimLocation: string
+  score: number
+  reasons: string[]
+  scoreBreakdown: MatchScoreBreakdown
+}
