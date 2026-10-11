@@ -96,3 +96,54 @@ export type PossibleMatch = {
   reasons: string[]
   scoreBreakdown: MatchScoreBreakdown
 }
+
+export type StatisticsOverview = {
+  totalItems: number
+  totalLost: number
+  totalFound: number
+  activeLost: number
+  activeFound: number
+  recovered: number
+  returned: number
+  claims: {
+    total: number
+    pending: number
+    approved: number
+    rejected: number
+  }
+}
+
+export type CategoryStatistic = {
+  categoryId: string | null
+  name: string
+  total: number
+  lost: number
+  found: number
+  percentage: number
+}
+
+export type LocationStatistic = {
+  locationId: string | null
+  name: string
+  total: number
+  lost: number
+  found: number
+  percentage: number
+  rank: number
+}
+
+export type ResolutionStatistics = {
+  totalReports: number
+  resolvedReports: number
+  overallResolutionRate: number
+  lost: {
+    total: number
+    recovered: number
+    rate: number
+  }
+  found: {
+    total: number
+    returned: number
+    rate: number
+  }
+}
