@@ -1,4 +1,4 @@
-import { Route, Routes, Navigate } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { ActivityHistoryPage } from './pages/ActivityHistoryPage'
 import { BrowseItemsPage } from './pages/BrowseItemsPage'
@@ -7,6 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { EditItemPage } from './pages/EditItemPage'
 import { FoundReportsPage } from './pages/FoundReportsPage'
 import { ItemDetailsPage } from './pages/ItemDetailsPage'
+import { LandingPage } from './pages/LandingPage'
 import { LostReportsPage } from './pages/LostReportsPage'
 import { Member3HomePage } from './pages/Member3HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -19,7 +20,7 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route index element={<Navigate to="/member3" replace />} />
+        <Route index element={<LandingPage />} />
         <Route path="member3" element={<Member3HomePage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="items" element={<BrowseItemsPage />} />
